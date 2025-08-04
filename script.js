@@ -16,76 +16,74 @@ function imprimirFormulario() {
         alert("Campo nome não encontrado!");
         return;
     }
-
     const nomeCampo = nomeElemento.value.trim();
     const nomeLimpo = nomeCampo.replace(/[\\/:*?"<>|]/g, '').substring(0, 15);
 
-    // Substituir os textareas por divs
-    const textareas = document.querySelectorAll(".text-area");
-    const divs = [];
+    // Clona a seção do formulário
+    const originalContact = document.getElementById("contact");
+    const clone = originalContact.cloneNode(true);
+
+    // Substitui textareas por divs no clone
+    const textareas = clone.querySelectorAll(".text-area");
     textareas.forEach(textarea => {
         const div = document.createElement("div");
+        div.className = "text-area-replacement";
         div.textContent = textarea.value;
         div.style.cssText = `
-            min-height: ${textarea.scrollHeight}px;
-            width: ${textarea.offsetWidth}px;
             border: 1px solid #ccc;
-            padding: 5px;
-            white-space: pre-wrap;
-            overflow-wrap: break-word;
-            text-align: justify;
-            font-size: 2rem;
+            padding: 10px;
             margin-bottom: 10px;
+            font-size: 2rem;
+            text-align: justify;
+            white-space: pre-wrap;
         `;
         textarea.parentNode.replaceChild(div, textarea);
-        divs.push({ div, textarea });
     });
 
-    // Captura o conteúdo que você quer imprimir
-    const contentToPrint = document.getElementById("contact");
-    if (!contentToPrint) {
-        alert("Seção #contact não encontrada!");
-        return;
-    }
+    // Cria um contêiner isolado para impressão
+    const printArea = document.createElement("div");
+    printArea.id = "area-impressao";
+    printArea.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        background: white;
+        padding: 20px;
+        z-index: 9999;
+    `;
+    printArea.appendChild(clone);
+    document.body.appendChild(printArea);
 
-    const printWindow = window.open('', '', 'width=800,height=600');
-    printWindow.document.write(`
-        <html>
-            <head>
-                <title>${nomeLimpo || "Sem_Nome"} - Anamnese Financeira</title>
-                <style>
-                    body {
-                        font-family: Arial, sans-serif;
-                        padding: 20px;
-                        background: white;
-                        color: black;
-                    }
-                    // div {
-                    //     font-size: 3rem;
-                    //     text-align: justify;
-                    // }
-                </style>
-            </head>
-            <body>
-                ${contentToPrint.innerHTML}
-            </body>
-        </html>
-    `);
-    printWindow.document.close();
+    // Oculta todo o resto da página com estilo temporário
+    const style = document.createElement("style");
+    style.innerHTML = `
+        @media print {
+            body * {
+                visibility: hidden !important;
+            }
+            #area-impressao, #area-impressao * {
+                visibility: visible !important;
+            }
+            #area-impressao {
+                position: absolute;
+                top: 0;
+                left: 0;
+            }
+        }
+    `;
+    document.head.appendChild(style);
 
-    // Espera a janela carregar antes de imprimir
-    printWindow.onload = () => {
-        printWindow.focus();
-        printWindow.print();
-        printWindow.close();
+    document.title = `${nomeLimpo || "Sem_Nome"} - Anamnese Financeira`;
+    window.print();
 
-        // Restaura os textareas
-        divs.forEach(({ div, textarea }) => {
-            div.parentNode.replaceChild(textarea, div);
-        });
-    };
+    // Remove elementos temporários após impressão
+    setTimeout(() => {
+        document.body.removeChild(printArea);
+        document.head.removeChild(style);
+        document.title = "Lorran - Consultoria Financeira";
+    }, 1000);
 }
-
 //--------------------------------------------------------
 
     document.getElementById("botao-chamada").addEventListener("click", function () {
